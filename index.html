@@ -19,8 +19,6 @@
 			#canvas {
 				margin: auto; position: absolute;
 				top: 0; bottom: 0; right: 0; left: 0;
-
-				cursor: none;
 			}
       </style>
 
@@ -60,8 +58,20 @@
 
          var fruitRadius = snakePointRadius;
 
+         // Snake base speed, in pixels per second
+         var snakeBaseSpeed = 100;
+
+          // Snake curve radius, in pixels
+         var snakeRotateRadius = 40;
+
          // Rotation speed, in radians per second
-         var snakeRotateSpeed = 2 * Math.PI / 150;
+         var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
+
+         // Length gained for each fruit
+         var fruitLength = 20;
+
+         // Snake initial length, in snake points
+         var snakeInitialLength = 150;
       </script>
 
       <script>
@@ -96,19 +106,22 @@
             this.rotate = -1;
 
             // Snake base speed, in pixels per second
-            this.speed = 100;
+            this.speed = snakeBaseSpeed;
 
             // Function that moves the snake for the requested time step
             this.move = function ( t ) {
                var dx = this.speed * t;
 
-               for ( var i = this.positions.length - 1; i > 0; --i )
+               for ( var i = this.positions.length - 1; i > 0; --i ) {
                   this.positions[i] = this.positions[i-1].slice(0);
+                  this.positions[i][2] = 0.01 * snakePointRadius + 0.99 * this.positions[i][2];
+               }
 
                this.positions[0][0] += dx * Math.cos ( this.direction );
                this.positions[0][1] += dx * Math.sin ( this.direction );
+               this.positions[0][2] = snakePointRadius;
 
-               this.direction += snakeRotateSpeed * this.rotate;
+               this.direction += snakeRotateSpeed * this.rotate * t;
             }
 
             // Function that grows the snake by one element
@@ -118,19 +131,33 @@
                }
             }
 
+            // Plays eat animation effect
+            this.eat = function () {
+               this.grow ( fruitLength );
+               this.positions[0][2] = snakePointRadius * 1.8;
+            }
+
             // Function that draws the snake on a graphic context
             this.draw = function ( context ) {
                context.fillStyle = this.color;
 
                for ( var i = 0; i < this.positions.length; i++ ) {
                   context.beginPath ();
-                  context.arc ( this.positions[i][0], this.positions[i][1], snakePointRadius, 0, 2*Math.PI );
+                  context.arc ( this.positions[i][0], this.positions[i][1], this.positions[i][2], 0, 2*Math.PI );
                   context.fill ();
                }
+
+               context.fillStyle = fieldColor;
+               context.beginPath ();
+               context.arc ( this.positions[0][0], this.positions[0][1], this.positions[0][2]*0.6, 0, 2*Math.PI );
+               context.fill();
             }
          }
 
          var Match = function ( ) {
+            // Game running flag
+            this.running = false;
+
             // Match snake
             this.snake = new Snake ( );
 
@@ -144,8 +171,10 @@
             // Function that sets up the game
             this.setup = function ( ) {
                this.snake = new Snake ( );
-               for ( var i = 0; i < 20; ++i ) this.snake.positions.push ( [0,0] );
+               this.snake.positions.push ( [0,snakeRotateRadius/2+snakePointRadius/2,snakePointRadius] );
+               this.snake.grow ( snakeInitialLength );
                this.spawnFruit ( );
+               this.running = true;
             }
 
             // Function that draws the game
@@ -160,6 +189,11 @@
 
             // Function that updates the game
             this.update = function ( t ) {
+               if ( !this.running ) return;
+
+               var oldPositions = [];
+               for ( var i = 0; i < this.snake.positions.length; ++i )
+                  oldPositions.push ( this.snake.positions[i].slice(0) );
                this.snake.move ( t );
 
                // Check if the snake has hit the fruit
@@ -167,9 +201,23 @@
                if ( dist2 ( this.snake.positions[0], this.fruit ) < r*r ) {
                   this.score++;
                   this.spawnFruit();
-                  this.snake.grow(10);
+
+                  this.snake.eat();
+
                   shake();
                }
+
+               // Check if the snake has hit the border or itself
+               r = radius - snakePointRadius;
+               if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r )
+                  this.running = false;
+
+               // Check if the snake has hit some parts of itself
+               r = 2*snakePointRadius;
+               for ( var i = 11; i < this.snake.positions.length; ++i )
+                  if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
+                       dist2 ( oldPositions[0], oldPositions[i] ) >= r*r )
+                     this.running = false;
             }
 
             // Spawns a fruit in the game
@@ -224,6 +272,8 @@
             document.onkeypress = function ( e ) {
                if ( e.which == 32 ) match.snake.rotate *= -1;
             }
+
+            document.onclick = function ( e ) { match.snake.rotate *= -1; }
          }
 
          var draw = function ( ) {
