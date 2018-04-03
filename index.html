@@ -65,8 +65,14 @@
          // Snake base speed, in pixels per second
          var snakeBaseSpeed = 100;
 
+         // Maximum speed factor
+         var maxSpeedFactor = 2;
+
+         // Speed increase parameter
+         var speedIncreaseParam = 0.01;
+
           // Snake curve radius, in pixels
-         var snakeRotateRadius = 40;
+         var snakeRotateRadius = 35;
 
          // Rotation speed, in radians per second
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
@@ -209,7 +215,8 @@
                var oldPositions = [];
                for ( var i = 0; i < this.snake.positions.length; ++i )
                   oldPositions.push ( this.snake.positions[i].slice(0) );
-               this.snake.move ( t );
+
+               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.score ) ) );
 
                // Check if the snake has hit the fruit
                var r = fruitRadius + snakePointRadius;
@@ -264,7 +271,7 @@
 
             // Spawns an obstacle
             this.spawnObst = function () {
-               var r = Math.random() * 100;
+               var r = Math.random() * 50 + 30;
                var th = Math.random() * 2*Math.PI;
                var obst = [ radius * Math.cos(th), radius * Math.sin(th), r ];
 
