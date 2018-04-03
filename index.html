@@ -40,6 +40,9 @@
          //Field color: the background color of the circular game field
 			var fieldColor = "#303030";
 
+         // Obstacle color
+         var obstColor = "";
+
          // Fruit color
          var fruitColor = "#FCFFA3";
 
@@ -72,7 +75,7 @@
          var fruitLength = 20;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 150;
+         var snakeInitialLength = 100;
       </script>
 
       <script>
@@ -168,12 +171,17 @@
             // Score
             this.score = 0;
 
+            // Obstacles
+            this.obstacles = [];
+
             // Function that sets up the game
             this.setup = function ( ) {
                this.snake = new Snake ( );
+               this.obstacles = [];
                this.snake.positions.push ( [0,snakeRotateRadius/2+snakePointRadius/2,snakePointRadius] );
                this.snake.grow ( snakeInitialLength );
                this.spawnFruit ( );
+               this.score = 0;
                this.running = true;
             }
 
@@ -185,6 +193,13 @@
                context.beginPath();
                context.arc ( this.fruit[0], this.fruit[1], fruitRadius, 0, 2*Math.PI );
                context.fill();
+
+               for ( var i = 0; i < this.obstacles.length; ++i ) {
+                  context.beginPath ( );
+                  context.arc ( this.obstacles[i][0], this.obstacles[i][1], this.obstacles[i][2], 0, 2*Math.PI );
+                  context.fillStyle = obstColor;
+                  context.fill();
+               }
             }
 
             // Function that updates the game
@@ -205,6 +220,8 @@
 
                   this.snake.eat();
 
+                  if ( this.score % 10 == 0 ) this.spawnObst();
+
                   shake();
                }
 
@@ -219,6 +236,13 @@
                   if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
                        dist2 ( oldPositions[0], oldPositions[i] ) >= r*r )
                      this.running = false;
+
+               // Check if the snake has hit some obstacle
+               for ( var i = 0; i < this.obstacles.length; ++i ) {
+                  r = snakePointRadius + this.obstacles[i][2]
+                  if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r )
+                     this.running = false;
+               }
             }
 
             // Spawns a fruit in the game
@@ -228,6 +252,29 @@
 
                this.fruit[0] = r * Math.cos(th);
                this.fruit[1] = r * Math.sin(th);
+
+               for ( var i = 0; i < this.obstacles.length; ++i ) {
+                  var rr = fruitRadius * ( this.obstacles[i][2] + 5 );
+                  if ( dist2 ( this.fruit, this.obstacles[i] ) < r*r ) {
+                     this.spawnFruit();
+                     break;
+                  }
+               }
+            }
+
+            // Spawns an obstacle
+            this.spawnObst = function () {
+               var r = Math.random() * 100;
+               var th = Math.random() * 2*Math.PI;
+               var obst = [ radius * Math.cos(th), radius * Math.sin(th), r ];
+
+               while ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius)*(r + snakePointRadius) ) {
+                  r = Math.random() * 100;
+                  th = Math.random() * 2*Math.PI;
+                  obst = [ radius * cos(th), radius * sin(th), r ];
+               }
+
+               this.obstacles.push ( obst );
             }
          }
 
@@ -267,10 +314,12 @@
             setInterval ( update, 1000 / fps );
 
             bgColor = $("body").css("background-color");
+            obstColor = bgColor;
 
             match.setup ();
 
             document.onkeypress = function ( e ) {
+               if ( e.which == 114 ) match.setup();
                if ( e.which == 32 ) match.snake.rotate *= -1;
             }
 
