@@ -51,6 +51,7 @@
 
          // Score text size
          var scoreSize = 96;
+         var bestScoreSize = 24;
 
          //////////////////////////
 			// Game parameters      //
@@ -114,7 +115,7 @@
 
                for ( var i = this.positions.length - 1; i > 0; --i ) {
                   this.positions[i] = this.positions[i-1].slice(0);
-                  this.positions[i][2] = 0.01 * snakePointRadius + 0.99 * this.positions[i][2];
+                  // this.positions[i][2] = 0.01 * snakePointRadius + 0.99 * this.positions[i][2];
                }
 
                this.positions[0][0] += dx * Math.cos ( this.direction );
@@ -134,7 +135,6 @@
             // Plays eat animation effect
             this.eat = function () {
                this.grow ( fruitLength );
-               this.positions[0][2] = snakePointRadius * 1.8;
             }
 
             // Function that draws the snake on a graphic context
@@ -200,6 +200,7 @@
                var r = fruitRadius + snakePointRadius;
                if ( dist2 ( this.snake.positions[0], this.fruit ) < r*r ) {
                   this.score++;
+                  localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
                   this.spawnFruit();
 
                   this.snake.eat();
@@ -274,6 +275,8 @@
             }
 
             document.onclick = function ( e ) { match.snake.rotate *= -1; }
+
+            if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
          }
 
          var draw = function ( ) {
@@ -298,6 +301,10 @@
 				context.font = scoreSize + "px Oswald";
 				context.textAlign = "start";
 				context.fillText ( match.score, 10, 10 + scoreSize );
+
+            context.font = bestScoreSize + "px Oswald";
+            context.textAlign = "end"
+            context.fillText ( "best " + localStorage.bestScore, canvas.width, canvas.height - 30 - bestScoreSize );
          }
 
          var update = function ( ) {
