@@ -83,8 +83,10 @@
          // Snake initial length, in snake points
          var snakeInitialLength = 100;
 
-         // Scaling factor
-         var scalingK = 0.005;
+         // Scaling parameters
+         var initialScaling = 1.5;
+         var minScaling = 0.5;
+         var scalingK = 0.05;
       </script>
 
       <script>
@@ -186,8 +188,8 @@
 
             // Time
             this.t = 0;
-            this.targetScaling = 1;
-            this.scaling = 1;
+            this.targetScaling = initialScaling;
+            this.scaling = initialScaling;
 
             // Function that sets up the game
             this.setup = function ( ) {
@@ -196,7 +198,6 @@
                this.snake.positions.push ( [0,snakeRotateRadius/2+snakePointRadius/2,snakePointRadius] );
                this.snake.grow ( snakeInitialLength );
                this.fruits = [];
-               this.spawnFruit ( 0 );
 
                var d = 10;
                for ( var i = 0; i < 10; ++i ) {
@@ -207,7 +208,10 @@
                this.score = 0;
                this.running = true;
                this.t = 0;
-               this.scaling = 1;
+               this.scaling = initialScaling;
+               this.targetScaling = initialScaling;
+               
+               this.spawnFruit ( 0 );
             }
 
             // Function that draws the game
@@ -260,7 +264,7 @@
 
                      shake();
 
-                     this.targetScaling = 0.5 * ( 1 + Math.exp ( -scalingK * this.score ) );
+                     this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.score * scalingK );
                   }
                }
 
@@ -284,11 +288,11 @@
                }
 
                // Animate scaling
-               this.scaling += (this.targetScaling - this.scaling) * t * 5;
+               this.scaling += (this.targetScaling - this.scaling) * t * 10;
 
                // Animate obstacles
                for ( var i = 0; i < this.obstacles.length; ++i )
-                  this.obstacles[i][2] += ( this.obstacles[i][3] - this.obstacles[i][2] ) * t;
+                  this.obstacles[i][2] += ( this.obstacles[i][3] - this.obstacles[i][2] ) * t * 5;
 
                // Animate fruit
                for ( var i = 0; i < this.fruits.length; ++i ) {
@@ -345,13 +349,14 @@
 
             // Spawns an obstacle
             this.spawnObst = function () {
-               var r, th, obst;
+               var r, rho, th, obst;
                var again;
 
                do {
+                  rho = Math.random() * radius / this.scaling;
                   r = ( Math.random() * 50 + 30 ) / this.scaling;;
                   th = Math.random() * 2*Math.PI;
-                  obst = [ radius / this.scaling * Math.cos(th), radius / this.scaling * Math.sin(th), 0, r ];
+                  obst = [ rho * Math.cos(th), rho * Math.sin(th), 0, r ];
 
                   again = ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
 
