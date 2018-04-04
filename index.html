@@ -307,8 +307,16 @@
                this.fruits[j][2] = 0;
 
                for ( var i = 0; i < this.obstacles.length; ++i ) {
-                  var rr = fruitRadius * ( this.obstacles[i][2] + 5 );
-                  if ( dist2 ( this.fruits[j], this.obstacles[i] ) < r*r ) {
+                  var rr = fruitRadius + ( this.obstacles[i][2] + 5 );
+                  if ( dist2 ( this.fruits[j], this.obstacles[i] ) < rr*rr ) {
+                     this.spawnFruit(j);
+                     break;
+                  }
+               }
+
+               var rr = fruitRadius + snakePointRadius;
+               for ( var k = 0; k < this.snake.positions.length; k++ ) {
+                  if ( dist2 ( this.fruits[j], this.snake.positions[k] ) < rr*rr ) {
                      this.spawnFruit(j);
                      break;
                   }
@@ -376,12 +384,12 @@
 
             match.setup ();
 
-            document.onkeypress = function ( e ) {
-               if ( e.which == 114 ) match.setup();
+            document.onkeydown = function ( e ) {
+               if ( e.which == 82 ) match.setup();
                if ( e.which == 32 ) match.snake.rotate *= -1;
             }
 
-            document.onclick = function ( e ) { match.snake.rotate *= -1; }
+            document.onmousedown = function ( e ) { match.snake.rotate *= -1; }
 
             if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
          }
