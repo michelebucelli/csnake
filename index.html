@@ -197,6 +197,13 @@
                this.snake.grow ( snakeInitialLength );
                this.fruits = [];
                this.spawnFruit ( 0 );
+
+               var d = 10;
+               for ( var i = 0; i < 10; ++i ) {
+                  this.spawnFruit ( i+1, d );
+                  d *= 2;
+               }
+
                this.score = 0;
                this.running = true;
                this.t = 0;
@@ -217,7 +224,7 @@
                }
 
                context.fillStyle = fruitColor;
-               for ( var i = 0; i < this.fruits.length; ++i ) {
+               for ( var i = 0; i < this.fruits.length; ++i ) if ( this.fruits[i][3] <= 0 ) {
                   context.beginPath();
                   context.arc ( this.fruits[i][0], this.fruits[i][1], this.fruits[i][2], 0, 2*Math.PI );
                   context.fill();
@@ -241,17 +248,15 @@
                // Check if the snake has hit some fruit
                var r = fruitRadius + snakePointRadius;
                for ( var i = 0; i < this.fruits.length; ++i ) {
-                  if ( dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
+                  if ( this.fruits[i][3] <= 0 && dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
                      this.score++;
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
                      this.spawnFruit(i);
 
                      this.snake.eat();
 
-                     if ( this.score % 5 == 0 ) {
+                     if ( this.score % 5 == 0 )
                         this.spawnObst();
-                        this.spawnFruit ( this.fruits.length );
-                     }
 
                      shake();
 
@@ -286,16 +291,20 @@
                   this.obstacles[i][2] += ( this.obstacles[i][3] - this.obstacles[i][2] ) * t;
 
                // Animate fruit
-               for ( var i = 0; i < this.fruits.length; ++i )
-                  this.fruits[i][2] += ( fruitRadius - this.fruits[i][2] ) * t * 10;
+               for ( var i = 0; i < this.fruits.length; ++i ) {
+                  if ( this.fruits[i][3] <= 0 ) this.fruits[i][2] += ( fruitRadius - this.fruits[i][2] ) * t * 10;
+                  else { this.fruits[i][3] -= t; if ( this.fruits[i][3] <= 0 ) this.spawnFruit(i); }
+               }
 
                if ( !this.running ) shake();
             }
 
             // Spawns a fruit in the game
-            this.spawnFruit = function ( j ) {
-               if ( this.fruits.length <= j ) {
-                  this.fruits.push ( [0,0,0] );
+            this.spawnFruit = function ( j, delay ) {
+               if ( delay == undefined ) delay = 0;
+
+               if ( j == undefined || this.fruits.length <= j) {
+                  this.fruits.push ( [0,0,0,0] );
                   j = this.fruits.length - 1;
                }
 
@@ -305,19 +314,30 @@
                this.fruits[j][0] = r * Math.cos(th);
                this.fruits[j][1] = r * Math.sin(th);
                this.fruits[j][2] = 0;
+               this.fruits[j][3] = delay;
+
+               if ( delay > 0 ) return;
 
                for ( var i = 0; i < this.obstacles.length; ++i ) {
                   var rr = fruitRadius + ( this.obstacles[i][2] + 5 );
                   if ( dist2 ( this.fruits[j], this.obstacles[i] ) < rr*rr ) {
-                     this.spawnFruit(j);
+                     this.spawnFruit(j,delay);
                      break;
                   }
                }
 
-               var rr = fruitRadius + snakePointRadius;
+               var rr = fruitRadius + snakePointRadius + 10;
                for ( var k = 0; k < this.snake.positions.length; k++ ) {
                   if ( dist2 ( this.fruits[j], this.snake.positions[k] ) < rr*rr ) {
-                     this.spawnFruit(j);
+                     this.spawnFruit(j,delay);
+                     break;
+                  }
+               }
+
+               var rr = 2 * fruitRadius + 30;
+               for ( var i = 0; i < this.fruits.length; ++i ) {
+                  if ( i != j && dist2 ( this.fruits[j], this.fruits[i] ) < rr*rr ) {
+                     this.spawnFruit(j,delay);
                      break;
                   }
                }
