@@ -82,6 +82,9 @@
 
          // Snake initial length, in snake points
          var snakeInitialLength = 100;
+
+         // Scaling factor
+         var scalingK = 0.005;
       </script>
 
       <script>
@@ -121,15 +124,16 @@
             // Function that moves the snake for the requested time step
             this.move = function ( t ) {
                var dx = this.speed * t;
+               var r = snakePointRadius; //0.5 * snakePointRadius * ( 1 + Math.exp ( -0.0005 * (this.positions.length-snakeInitialLengt ) );
 
                for ( var i = this.positions.length - 1; i > 0; --i ) {
                   this.positions[i] = this.positions[i-1].slice(0);
-                  // this.positions[i][2] = 0.01 * snakePointRadius + 0.99 * this.positions[i][2];
+                  this.positions[i][2] = r;
                }
 
                this.positions[0][0] += dx * Math.cos ( this.direction );
                this.positions[0][1] += dx * Math.sin ( this.direction );
-               this.positions[0][2] = snakePointRadius;
+               this.positions[0][2] = r;
 
                this.direction += snakeRotateSpeed * this.rotate * t;
             }
@@ -172,7 +176,7 @@
 
             // Current fruit position
             // Coordinates relative to field center
-            this.fruit = [0,0];
+            this.fruits = [ [0,0] ];
 
             // Score
             this.score = 0;
@@ -180,37 +184,53 @@
             // Obstacles
             this.obstacles = [];
 
+            // Time
+            this.t = 0;
+            this.targetScaling = 1;
+            this.scaling = 1;
+
             // Function that sets up the game
             this.setup = function ( ) {
                this.snake = new Snake ( );
                this.obstacles = [];
                this.snake.positions.push ( [0,snakeRotateRadius/2+snakePointRadius/2,snakePointRadius] );
                this.snake.grow ( snakeInitialLength );
-               this.spawnFruit ( );
+               this.fruits = [];
+               this.spawnFruit ( 0 );
                this.score = 0;
                this.running = true;
+               this.t = 0;
+               this.scaling = 1;
             }
 
             // Function that draws the game
             this.draw = function ( context ) {
+               context.save ();
+               context.scale ( this.scaling, this.scaling );
                this.snake.draw ( context );
 
-               context.fillStyle = fruitColor;
-               context.beginPath();
-               context.arc ( this.fruit[0], this.fruit[1], fruitRadius, 0, 2*Math.PI );
-               context.fill();
-
+               context.fillStyle = obstColor;
                for ( var i = 0; i < this.obstacles.length; ++i ) {
                   context.beginPath ( );
                   context.arc ( this.obstacles[i][0], this.obstacles[i][1], this.obstacles[i][2], 0, 2*Math.PI );
-                  context.fillStyle = obstColor;
                   context.fill();
                }
+
+               context.fillStyle = fruitColor;
+               for ( var i = 0; i < this.fruits.length; ++i ) {
+                  context.beginPath();
+                  context.arc ( this.fruits[i][0], this.fruits[i][1], this.fruits[i][2], 0, 2*Math.PI );
+                  context.fill();
+               }
+
+               context.restore();
             }
 
             // Function that updates the game
             this.update = function ( t ) {
                if ( !this.running ) return;
+
+               this.t += t;
 
                var oldPositions = [];
                for ( var i = 0; i < this.snake.positions.length; ++i )
@@ -218,22 +238,29 @@
 
                this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.score ) ) );
 
-               // Check if the snake has hit the fruit
+               // Check if the snake has hit some fruit
                var r = fruitRadius + snakePointRadius;
-               if ( dist2 ( this.snake.positions[0], this.fruit ) < r*r ) {
-                  this.score++;
-                  localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
-                  this.spawnFruit();
+               for ( var i = 0; i < this.fruits.length; ++i ) {
+                  if ( dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
+                     this.score++;
+                     localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
+                     this.spawnFruit(i);
 
-                  this.snake.eat();
+                     this.snake.eat();
 
-                  if ( this.score % 10 == 0 ) this.spawnObst();
+                     if ( this.score % 5 == 0 ) {
+                        this.spawnObst();
+                        this.spawnFruit ( this.fruits.length );
+                     }
 
-                  shake();
+                     shake();
+
+                     this.targetScaling = 0.5 * ( 1 + Math.exp ( -scalingK * this.score ) );
+                  }
                }
 
-               // Check if the snake has hit the border or itself
-               r = radius - snakePointRadius;
+               // Check if the snake has hit the border
+               r = radius / this.scaling - this.snake.positions[0][2];
                if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r )
                   this.running = false;
 
@@ -250,20 +277,39 @@
                   if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r )
                      this.running = false;
                }
+
+               // Animate scaling
+               this.scaling += (this.targetScaling - this.scaling) * t * 5;
+
+               // Animate obstacles
+               for ( var i = 0; i < this.obstacles.length; ++i )
+                  this.obstacles[i][2] += ( this.obstacles[i][3] - this.obstacles[i][2] ) * t;
+
+               // Animate fruit
+               for ( var i = 0; i < this.fruits.length; ++i )
+                  this.fruits[i][2] += ( fruitRadius - this.fruits[i][2] ) * t * 10;
+
+               if ( !this.running ) shake();
             }
 
             // Spawns a fruit in the game
-            this.spawnFruit = function () {
-               var r = Math.random() * (radius - fruitRadius - 5);
+            this.spawnFruit = function ( j ) {
+               if ( this.fruits.length <= j ) {
+                  this.fruits.push ( [0,0,0] );
+                  j = this.fruits.length - 1;
+               }
+
+               var r = Math.random() * (radius / this.scaling - fruitRadius - 5);
                var th = Math.random() * 2*Math.PI;
 
-               this.fruit[0] = r * Math.cos(th);
-               this.fruit[1] = r * Math.sin(th);
+               this.fruits[j][0] = r * Math.cos(th);
+               this.fruits[j][1] = r * Math.sin(th);
+               this.fruits[j][2] = 0;
 
                for ( var i = 0; i < this.obstacles.length; ++i ) {
                   var rr = fruitRadius * ( this.obstacles[i][2] + 5 );
-                  if ( dist2 ( this.fruit, this.obstacles[i] ) < r*r ) {
-                     this.spawnFruit();
+                  if ( dist2 ( this.fruits[j], this.obstacles[i] ) < r*r ) {
+                     this.spawnFruit(j);
                      break;
                   }
                }
@@ -271,15 +317,20 @@
 
             // Spawns an obstacle
             this.spawnObst = function () {
-               var r = Math.random() * 50 + 30;
-               var th = Math.random() * 2*Math.PI;
-               var obst = [ radius * Math.cos(th), radius * Math.sin(th), r ];
+               var r, th, obst;
+               var again;
 
-               while ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius)*(r + snakePointRadius) ) {
-                  r = Math.random() * 100;
+               do {
+                  r = ( Math.random() * 50 + 30 ) / this.scaling;;
                   th = Math.random() * 2*Math.PI;
-                  obst = [ radius * cos(th), radius * sin(th), r ];
-               }
+                  obst = [ radius / this.scaling * Math.cos(th), radius / this.scaling * Math.sin(th), 0, r ];
+
+                  again = ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
+
+                  // Also check that the obstacle doesn't cover any fruit
+                  for ( var i = 0; i < this.fruits.length && !again; ++i )
+                     again = ( dist2 ( this.fruits[i], obst ) < (r + fruitRadius)*(r + fruitRadius) );
+               } while ( again );
 
                this.obstacles.push ( obst );
             }
@@ -375,6 +426,6 @@
    </head>
 
    <body onload="setup()">
-   		<canvas width="600" height="600" id="canvas"></canvas>
+   		<canvas width="720" height="720" id="canvas"></canvas>
    </body>
 </html>
