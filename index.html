@@ -191,6 +191,9 @@
             this.targetScaling = initialScaling;
             this.scaling = initialScaling;
 
+            // Last time of obstacle spawn
+            this.lastObst = 0;
+
             // Function that sets up the game
             this.setup = function ( ) {
                this.snake = new Snake ( );
@@ -212,6 +215,8 @@
                this.targetScaling = initialScaling;
 
                this.spawnFruit ( 0 );
+
+               this.lastObst = Date.now();
             }
 
             // Function that draws the game
@@ -256,13 +261,7 @@
                      this.score++;
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
                      this.spawnFruit(i);
-
                      this.snake.eat();
-
-                     if ( this.score % 5 == 0 )
-                        this.spawnObst();
-
-                     shake();
 
                      this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.score * scalingK );
                   }
@@ -285,6 +284,14 @@
                   r = snakePointRadius + this.obstacles[i][2]
                   if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r )
                      this.running = false;
+               }
+
+               // Obstacle spawn
+               var tt = Date.now();
+               if ( Math.random() * 1000000 < tt - this.lastObst ) {
+                  console.log("SPAWN!");
+                  this.spawnObst();
+                  this.lastObst = tt;
                }
 
                // Animate scaling
