@@ -81,10 +81,10 @@
          var fruitLength = 20;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 100;
+         var snakeInitialLength = 50;
 
          // Scaling parameters
-         var initialScaling = 1.5;
+         var initialScaling = 1.75;
          var minScaling = 0.5;
          var scalingK = 0.05;
       </script>
@@ -195,7 +195,7 @@
             this.setup = function ( ) {
                this.snake = new Snake ( );
                this.obstacles = [];
-               this.snake.positions.push ( [0,snakeRotateRadius/2+snakePointRadius/2,snakePointRadius] );
+               this.snake.positions.push ( [0,snakeRotateRadius,snakePointRadius] );
                this.snake.grow ( snakeInitialLength );
                this.fruits = [];
 
@@ -210,7 +210,7 @@
                this.t = 0;
                this.scaling = initialScaling;
                this.targetScaling = initialScaling;
-               
+
                this.spawnFruit ( 0 );
             }
 
@@ -358,11 +358,15 @@
                   th = Math.random() * 2*Math.PI;
                   obst = [ rho * Math.cos(th), rho * Math.sin(th), 0, r ];
 
-                  again = ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
+                  again = ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius + snakeRotateRadius)*(r + snakePointRadius + snakeRotateRadius) );
 
                   // Also check that the obstacle doesn't cover any fruit
                   for ( var i = 0; i < this.fruits.length && !again; ++i )
                      again = ( dist2 ( this.fruits[i], obst ) < (r + fruitRadius)*(r + fruitRadius) );
+
+                  // And also check that it doesn't cover the tail
+                  for ( var i = 0; i < this.snake.positions.length && !again; ++i )
+                     again = ( dist2 ( this.snake.positions[i], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
                } while ( again );
 
                this.obstacles.push ( obst );
