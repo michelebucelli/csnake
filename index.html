@@ -66,10 +66,11 @@
          var snakeBaseSpeed = 100;
 
          // Maximum speed factor
-         var maxSpeedFactor = 2;
+         var maxSpeedFactor = 4;
+         var logMSF = Math.log ( maxSpeedFactor - 1 );
 
          // Speed increase parameter
-         var speedIncreaseParam = 0.01;
+         var speedIncreaseParam = 0.005;
 
           // Snake curve radius, in pixels
          var snakeRotateRadius = 35;
@@ -90,6 +91,20 @@
       </script>
 
       <script>
+         var outElastic = function(t) {
+             var s = 1.70158;
+             var p = 0;
+             var a = 1;
+             if (t == 0) return 0;
+             if (t == 1) return 1;
+             if (!p) p = 0.3;
+             if (a < 1) {
+               a = 1;
+               s = p / 4;
+             } else s = p / (2 * Math.PI) * Math.asin(1 / a);
+             return a * Math.pow(2, -15 * t) * Math.sin((t - s) * (2 * Math.PI) / p) + 1;
+         }
+
          var canvas = 0, context = 0;
          var fps = 60;
 
@@ -216,7 +231,7 @@
 
                this.spawnFruit ( 0 );
 
-               this.lastObst = Date.now();
+               this.lastObst = 0;
             }
 
             // Function that draws the game
@@ -252,7 +267,7 @@
                for ( var i = 0; i < this.snake.positions.length; ++i )
                   oldPositions.push ( this.snake.positions[i].slice(0) );
 
-               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.score ) ) );
+               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.score + logMSF ) ) );
 
                // Check if the snake has hit some fruit
                var r = fruitRadius + snakePointRadius;
@@ -268,12 +283,12 @@
                }
 
                // Check if the snake has hit the border
-               r = radius / this.scaling - this.snake.positions[0][2];
+               r = radius / this.scaling - this.snake.positions[0][2] + 1;
                if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r )
                   this.running = false;
 
                // Check if the snake has hit some parts of itself
-               r = 2*snakePointRadius;
+               r = 2*snakePointRadius-1;
                for ( var i = 11; i < this.snake.positions.length; ++i )
                   if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
                        dist2 ( oldPositions[0], oldPositions[i] ) >= r*r )
@@ -281,25 +296,24 @@
 
                // Check if the snake has hit some obstacle
                for ( var i = 0; i < this.obstacles.length; ++i ) {
-                  r = snakePointRadius + this.obstacles[i][2]
+                  r = snakePointRadius + this.obstacles[i][2] - 1;
                   if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r )
                      this.running = false;
                }
 
-               // Obstacle spawn
-               var tt = Date.now();
-               if ( Math.random() * 1000000 < tt - this.lastObst ) {
-                  console.log("SPAWN!");
+               if ( Math.random() * 10000 < this.t - this.lastObst ) {
                   this.spawnObst();
-                  this.lastObst = tt;
+                  this.lastObst = this.t;
                }
 
                // Animate scaling
-               this.scaling += (this.targetScaling - this.scaling) * t * 10;
+               this.scaling += (this.targetScaling - this.scaling) * t * 5;
 
                // Animate obstacles
-               for ( var i = 0; i < this.obstacles.length; ++i )
-                  this.obstacles[i][2] += ( this.obstacles[i][3] - this.obstacles[i][2] ) * t * 5;
+               for ( var i = 0; i < this.obstacles.length; ++i ) {
+                  var x = (this.t - this.obstacles[i][4]);
+                  this.obstacles[i][2] = this.obstacles[i][3] * outElastic(x);
+               }
 
                // Animate fruit
                for ( var i = 0; i < this.fruits.length; ++i ) {
@@ -363,7 +377,7 @@
                   rho = Math.random() * radius / this.scaling;
                   r = ( Math.random() * 50 + 30 ) / this.scaling;;
                   th = Math.random() * 2*Math.PI;
-                  obst = [ rho * Math.cos(th), rho * Math.sin(th), 0, r ];
+                  obst = [ rho * Math.cos(th), rho * Math.sin(th), 0, r, this.t ];
 
                   again = ( dist2 ( this.snake.positions[0], obst ) < (r + snakePointRadius + snakeRotateRadius)*(r + snakePointRadius + snakeRotateRadius) );
 
@@ -470,6 +484,6 @@
    </head>
 
    <body onload="setup()">
-   		<canvas width="720" height="720" id="canvas"></canvas>
+   		<canvas width="640" height="640" id="canvas"></canvas>
    </body>
 </html>
