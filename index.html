@@ -4,7 +4,7 @@
    <head>
       <title>Circular Snake</title>
 
-      <link href='https://fonts.googleapis.com/css?family=Oswald:700' rel='stylesheet' type='text/css'>
+      <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
 
       <style>
 			body {
@@ -32,7 +32,7 @@
 			//////////////////////////
 
          //Radius factor: field radius = canvas.height * radiusFactor
-			var radiusFactor = 0.40;
+			var radiusFactor = 0.38;
 
          // Radius of snake points
          var snakePointRadius = 9;
@@ -53,7 +53,7 @@
          var scoreColor = "#FCFFA3";
 
          // Score text size
-         var scoreSize = 96;
+         var scoreSize = 80;
          var bestScoreSize = 24;
 
          //////////////////////////
@@ -63,7 +63,7 @@
          var fruitRadius = snakePointRadius;
 
          // Snake base speed, in pixels per second
-         var snakeBaseSpeed = 100;
+         var snakeBaseSpeed = 80;
 
          // Maximum speed factor
          var maxSpeedFactor = 3;
@@ -73,7 +73,7 @@
          var speedIncreaseParam = 0.001;
 
           // Snake curve radius, in pixels
-         var snakeRotateRadius = 40;
+         var snakeRotateRadius = 35;
 
          // Rotation speed, in radians per second
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
@@ -90,7 +90,7 @@
          var scalingK = 0.05;
 
          // Combo duration, seconds
-         var comboDuration = 5;
+         var comboDuration = 4;
       </script>
 
       <script>
@@ -201,6 +201,7 @@
             this.scoreNoCombo = 0;
             this.combo = 1;
             this.comboTime = 0;
+            this.combometerShow = 0;
 
             // Obstacles
             this.obstacles = [];
@@ -243,16 +244,6 @@
 
             // Function that draws the game
             this.draw = function ( context ) {
-               if ( this.combo > 1 ) {
-                  context.fillStyle = fruitColor;
-                  context.beginPath();
-                  context.arc ( 0, 0, radius + 10, 0, 2 * Math.PI * ( 1 - (this.t - this.comboTime) / comboDuration ) );
-                  context.lineTo ( 0, 0 );
-                  context.lineTo ( radius + 5, 0 );
-                  context.fill();
-               }
-               else console.log("!");
-
                context.fillStyle = fieldColor;
    				context.beginPath();
    				context.arc ( 0, 0, radius, 0, 2 * Math.PI );
@@ -277,6 +268,15 @@
                }
 
                context.restore();
+
+               if ( this.combo > 1 ) {
+                  context.lineCap = "round";
+                  context.strokeStyle = fruitColor;
+                  context.lineWidth = 10;
+                  context.beginPath();
+                  context.arc ( 0, 0, radius + 5, 0, 2 * Math.PI * this.combometerShow );
+                  context.stroke();
+               }
             }
 
             // Function that updates the game
@@ -338,6 +338,8 @@
                if ( this.t - this.comboTime > comboDuration ) {
                   this.combo = 1;
                }
+               targetCombometer = 1 - (this.t - this.comboTime) / comboDuration;
+               this.combometerShow += ( targetCombometer - this.combometerShow ) * 20 * t;
 
                // Animate scaling
                this.scaling += (this.targetScaling - this.scaling) * t * 5;
@@ -491,13 +493,13 @@
             context.restore ( );
 
             context.fillStyle = scoreColor;
-				context.font = scoreSize + "px Oswald";
+				context.font = scoreSize + "px Varela Round";
 				context.textAlign = "start";
-				context.fillText ( match.score, 10, 10 + scoreSize );
+				context.fillText ( match.score, 20, 10 + scoreSize );
 
-            context.font = bestScoreSize + "px Oswald";
-            context.textAlign = "end"
-            context.fillText ( "best " + localStorage.bestScore, canvas.width, canvas.height - 30 - bestScoreSize );
+            context.font = bestScoreSize + "px Varela Round";
+            context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
+            context.fillText ( "best " + localStorage.bestScore, 0, scoreSize + 30 + 2*bestScoreSize );
          }
 
          var update = function ( ) {
