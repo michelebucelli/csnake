@@ -199,7 +199,8 @@
             // Score
             this.score = 0;
             this.scoreNoCombo = 0;
-            this.combo = 1;
+            this.scoreShow = 0;
+            this.combo = 0;
             this.comboTime = 0;
             this.combometerShow = 0;
 
@@ -229,8 +230,9 @@
                }
 
                this.score = 0;
+               this.scoreShow = 0;
                this.scoreNoCombo = 0;
-               this.combo = 1;
+               this.combo = 0;
                this.comboTime = 0;
                this.running = true;
                this.t = 0;
@@ -269,12 +271,12 @@
 
                context.restore();
 
-               if ( this.combo > 1 ) {
+               if ( this.combo > 0 ) {
                   context.lineCap = "round";
                   context.strokeStyle = fruitColor;
                   context.lineWidth = 10;
                   context.beginPath();
-                  context.arc ( 0, 0, radius + 5, 0, 2 * Math.PI * this.combometerShow );
+                  context.arc ( 0, 0, radius + 5, -Math.PI * this.combometerShow, Math.PI * this.combometerShow );
                   context.stroke();
                }
             }
@@ -295,7 +297,7 @@
                var r = fruitRadius + snakePointRadius;
                for ( var i = 0; i < this.fruits.length; ++i ) {
                   if ( this.fruits[i][3] <= 0 && dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
-                     this.score += this.combo;
+                     this.score += 1 + this.combo;
                      this.scoreNoCombo++;
 
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
@@ -336,13 +338,18 @@
 
                // Combo timer
                if ( this.t - this.comboTime > comboDuration ) {
-                  this.combo = 1;
+                  this.combo = 0;
                }
-               targetCombometer = 1 - (this.t - this.comboTime) / comboDuration;
-               this.combometerShow += ( targetCombometer - this.combometerShow ) * 20 * t;
+               else {
+                  targetCombometer = 1 - (this.t - this.comboTime) / comboDuration;
+                  this.combometerShow += ( targetCombometer - this.combometerShow ) * 20 * t;
+               }
 
                // Animate scaling
                this.scaling += (this.targetScaling - this.scaling) * t * 5;
+
+               // Animate score
+               this.scoreShow += (this.score - this.scoreShow) * 10 * t;
 
                // Animate obstacles
                for ( var i = 0; i < this.obstacles.length; ++i ) {
@@ -495,7 +502,7 @@
             context.fillStyle = scoreColor;
 				context.font = scoreSize + "px Varela Round";
 				context.textAlign = "start";
-				context.fillText ( match.score, 20, 10 + scoreSize );
+				context.fillText ( Math.round(match.scoreShow), 20, 10 + scoreSize );
 
             context.font = bestScoreSize + "px Varela Round";
             context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
