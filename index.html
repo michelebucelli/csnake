@@ -66,14 +66,14 @@
          var snakeBaseSpeed = 100;
 
          // Maximum speed factor
-         var maxSpeedFactor = 4;
+         var maxSpeedFactor = 3;
          var logMSF = Math.log ( maxSpeedFactor - 1 );
 
          // Speed increase parameter
-         var speedIncreaseParam = 0.005;
+         var speedIncreaseParam = 0.001;
 
           // Snake curve radius, in pixels
-         var snakeRotateRadius = 35;
+         var snakeRotateRadius = 40;
 
          // Rotation speed, in radians per second
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
@@ -88,6 +88,9 @@
          var initialScaling = 1.75;
          var minScaling = 0.5;
          var scalingK = 0.05;
+
+         // Combo duration, seconds
+         var comboDuration = 5;
       </script>
 
       <script>
@@ -143,14 +146,12 @@
                var dx = this.speed * t;
                var r = snakePointRadius; //0.5 * snakePointRadius * ( 1 + Math.exp ( -0.0005 * (this.positions.length-snakeInitialLengt ) );
 
-               for ( var i = this.positions.length - 1; i > 0; --i ) {
-                  this.positions[i] = this.positions[i-1].slice(0);
-                  this.positions[i][2] = r;
-               }
-
+               this.positions.unshift ( this.positions[0].slice(0) );
                this.positions[0][0] += dx * Math.cos ( this.direction );
                this.positions[0][1] += dx * Math.sin ( this.direction );
                this.positions[0][2] = r;
+
+               this.positions.splice(-1,1);
 
                this.direction += snakeRotateSpeed * this.rotate * t;
             }
@@ -197,6 +198,9 @@
 
             // Score
             this.score = 0;
+            this.scoreNoCombo = 0;
+            this.combo = 1;
+            this.comboTime = 0;
 
             // Obstacles
             this.obstacles = [];
@@ -224,6 +228,9 @@
                }
 
                this.score = 0;
+               this.scoreNoCombo = 0;
+               this.combo = 1;
+               this.comboTime = 0;
                this.running = true;
                this.t = 0;
                this.scaling = initialScaling;
@@ -236,6 +243,21 @@
 
             // Function that draws the game
             this.draw = function ( context ) {
+               if ( this.combo > 1 ) {
+                  context.fillStyle = fruitColor;
+                  context.beginPath();
+                  context.arc ( 0, 0, radius + 10, 0, 2 * Math.PI * ( 1 - (this.t - this.comboTime) / comboDuration ) );
+                  context.lineTo ( 0, 0 );
+                  context.lineTo ( radius + 5, 0 );
+                  context.fill();
+               }
+               else console.log("!");
+
+               context.fillStyle = fieldColor;
+   				context.beginPath();
+   				context.arc ( 0, 0, radius, 0, 2 * Math.PI );
+   				context.fill();
+
                context.save ();
                context.scale ( this.scaling, this.scaling );
                this.snake.draw ( context );
@@ -267,18 +289,23 @@
                for ( var i = 0; i < this.snake.positions.length; ++i )
                   oldPositions.push ( this.snake.positions[i].slice(0) );
 
-               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.score + logMSF ) ) );
+               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.scoreNoCombo + logMSF ) ) );
 
                // Check if the snake has hit some fruit
                var r = fruitRadius + snakePointRadius;
                for ( var i = 0; i < this.fruits.length; ++i ) {
                   if ( this.fruits[i][3] <= 0 && dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
-                     this.score++;
+                     this.score += this.combo;
+                     this.scoreNoCombo++;
+
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
                      this.spawnFruit(i);
                      this.snake.eat();
 
-                     this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.score * scalingK );
+                     this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.scoreNoCombo * scalingK );
+
+                     this.combo += 1;
+                     this.comboTime = this.t;
                   }
                }
 
@@ -301,9 +328,15 @@
                      this.running = false;
                }
 
+               // Spawn obstacles
                if ( Math.random() * 10000 < this.t - this.lastObst ) {
                   this.spawnObst();
                   this.lastObst = this.t;
+               }
+
+               // Combo timer
+               if ( this.t - this.comboTime > comboDuration ) {
+                  this.combo = 1;
                }
 
                // Animate scaling
@@ -453,12 +486,7 @@
 
             context.translate ( canvas.width / 2, canvas.height / 2 );
 
-				context.fillStyle = fieldColor;
-				context.beginPath();
-				context.arc ( 0, 0, radius, 0, 2 * Math.PI );
-				context.fill();
-
-            match.draw ( context );
+				match.draw ( context );
 
             context.restore ( );
 
