@@ -47,7 +47,7 @@
          var fruitColor = "#FCFFA3";
 
          //Width of the screen shake effect
-			var screenshakeWidth = 3;
+			var screenshakeWidth = 10;
 
          // Score text color
          var scoreColor = "#FCFFA3";
@@ -60,6 +60,8 @@
 			// Game parameters      //
 			//////////////////////////
 
+         var fps = 60;
+
          var fruitRadius = snakePointRadius;
 
          // Snake base speed, in pixels per second
@@ -70,7 +72,7 @@
          var logMSF = Math.log ( maxSpeedFactor - 1 );
 
          // Speed increase parameter
-         var speedIncreaseParam = 0.001;
+         var speedIncreaseParam = 0.005;
 
           // Snake curve radius, in pixels
          var snakeRotateRadius = 35;
@@ -79,10 +81,10 @@
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
 
          // Length gained for each fruit
-         var fruitLength = 20;
+         var fruitLength = 20 * fps / 60;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 50;
+         var snakeInitialLength = 50 * fps / 60;
 
          // Scaling parameters
          var initialScaling = 1.75;
@@ -109,7 +111,6 @@
          }
 
          var canvas = 0, context = 0;
-         var fps = 60;
 
          var radius = 0;
 
@@ -273,10 +274,10 @@
 
                if ( this.combo > 0 ) {
                   context.lineCap = "round";
-                  context.strokeStyle = fruitColor;
+                  context.strokeStyle = fieldColor;
                   context.lineWidth = 10;
                   context.beginPath();
-                  context.arc ( 0, 0, radius + 5, -Math.PI * this.combometerShow, Math.PI * this.combometerShow );
+                  context.arc ( 0, 0, radius + 10, -Math.PI * this.combometerShow, Math.PI * this.combometerShow );
                   context.stroke();
                }
             }
@@ -291,7 +292,8 @@
                for ( var i = 0; i < this.snake.positions.length; ++i )
                   oldPositions.push ( this.snake.positions[i].slice(0) );
 
-               this.snake.move ( t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.scoreNoCombo + logMSF ) ) );
+               var tt = t * ( maxSpeedFactor - Math.exp( -speedIncreaseParam * this.scoreNoCombo + logMSF ) );
+               this.snake.move ( tt );
 
                // Check if the snake has hit some fruit
                var r = fruitRadius + snakePointRadius;
@@ -308,26 +310,36 @@
 
                      this.combo += 1;
                      this.comboTime = this.t;
+
+                     console.log ( "FRUIT" );
                   }
                }
 
                // Check if the snake has hit the border
                r = radius / this.scaling - this.snake.positions[0][2] + 1;
-               if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r )
+               if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r ) {
                   this.running = false;
+                  console.log ( "BORDER" );
+               }
 
                // Check if the snake has hit some parts of itself
                r = 2*snakePointRadius-1;
-               for ( var i = 11; i < this.snake.positions.length; ++i )
+               var first = Math.ceil((2 * Math.PI * snakeRotateRadius - 2*snakePointRadius) / (tt * this.snake.speed));
+               console.log(first);
+               for ( var i = first; i < this.snake.positions.length; ++i )
                   if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
-                       dist2 ( oldPositions[0], oldPositions[i] ) >= r*r )
+                       dist2 ( oldPositions[0], oldPositions[i] ) >= r*r ) {
                      this.running = false;
+                     console.log ( "SELF " + i );
+                  }
 
                // Check if the snake has hit some obstacle
                for ( var i = 0; i < this.obstacles.length; ++i ) {
                   r = snakePointRadius + this.obstacles[i][2] - 1;
-                  if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r )
+                  if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r ) {
                      this.running = false;
+                     console.log ( "OBSTACLE" );
+                  }
                }
 
                // Spawn obstacles
@@ -478,7 +490,10 @@
 
             document.onkeydown = function ( e ) {
                if ( e.which == 82 ) match.setup();
-               if ( e.which == 32 ) match.snake.rotate *= -1;
+               if ( e.which == 32 ) {
+                  if ( match.running ) match.snake.rotate *= -1;
+                  else match.setup();
+               }
             }
 
             document.onmousedown = function ( e ) { match.snake.rotate *= -1; }
