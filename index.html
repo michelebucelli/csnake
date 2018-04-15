@@ -142,6 +142,9 @@
             // Snake base speed, in pixels per second
             this.speed = snakeBaseSpeed;
 
+            // Distance
+            this.dist = 0;
+
             // Function that moves the snake for the requested time step
             this.move = function ( t ) {
                var dx = this.speed * t;
@@ -155,6 +158,7 @@
                this.positions.splice(-1,1);
 
                this.direction += snakeRotateSpeed * this.rotate * t;
+               this.dist += dx;
             }
 
             // Function that grows the snake by one element
@@ -335,7 +339,7 @@
 
                // Check if the snake has hit some obstacle
                for ( var i = 0; i < this.obstacles.length; ++i ) {
-                  r = snakePointRadius + this.obstacles[i][2] - 1;
+                  r = snakePointRadius + this.obstacles[i][2];
                   if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r ) {
                      this.running = false;
                      console.log ( "OBSTACLE" );
@@ -496,7 +500,10 @@
                }
             }
 
-            document.onmousedown = function ( e ) { match.snake.rotate *= -1; }
+            document.onmousedown = function ( e ) {
+               if ( match.running ) match.snake.rotate *= -1;
+               else match.setup();
+            }
 
             if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
          }
@@ -517,7 +524,7 @@
             context.fillStyle = scoreColor;
 				context.font = scoreSize + "px Varela Round";
 				context.textAlign = "start";
-				context.fillText ( Math.round(match.scoreShow), 20, 10 + scoreSize );
+				context.fillText ( Math.round(match.scoreShow), 30, 10 + scoreSize );
 
             context.font = bestScoreSize + "px Varela Round";
             context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
