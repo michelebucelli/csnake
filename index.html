@@ -489,7 +489,8 @@
 
             radius = Math.max ( canvas.width, canvas.height ) * radiusFactor;
 
-            setInterval ( draw, 1000 / fps );
+            //setInterval ( draw, 1000 / fps );
+            requestAnimationFrame ( draw );
             setInterval ( update, 1000 / fps );
 
             bgColor = $("body").css("background-color");
@@ -534,6 +535,8 @@
             context.font = bestScoreSize + "px Varela Round";
             context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
             context.fillText ( "best " + localStorage.bestScore, 0, scoreSize + 30 + 2*bestScoreSize );
+
+            requestAnimationFrame ( draw );
          }
 
          var update = function ( ) {
