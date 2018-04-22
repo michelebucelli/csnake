@@ -65,8 +65,6 @@
 			// Game parameters      //
 			//////////////////////////
 
-         var fps = 60;
-
          var fruitRadius = snakePointRadius;
 
          // Snake base speed, in pixels per second
@@ -86,10 +84,10 @@
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
 
          // Length gained for each fruit
-         var fruitLength = 20 * fps / 60;
+         var fruitLength = 20;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 50 * fps / 60;
+         var snakeInitialLength = 50;
 
          // Scaling parameters
          var initialScaling = 1.75;
@@ -334,7 +332,7 @@
                // Check if the snake has hit some parts of itself
                r = 2*snakePointRadius-1;
                var first = Math.ceil((2 * Math.PI * snakeRotateRadius - 2*snakePointRadius) / (tt * this.snake.speed));
-               console.log(first);
+
                for ( var i = first; i < this.snake.positions.length; ++i )
                   if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
                        dist2 ( oldPositions[0], oldPositions[i] ) >= r*r ) {
@@ -490,8 +488,8 @@
             radius = Math.max ( canvas.width, canvas.height ) * radiusFactor;
 
             //setInterval ( draw, 1000 / fps );
-            requestAnimationFrame ( draw );
-            setInterval ( update, 1000 / fps );
+            requestAnimationFrame ( frame );
+            //setInterval ( update, 1000 / fps );
 
             bgColor = $("body").css("background-color");
             obstColor = bgColor;
@@ -506,12 +504,19 @@
                }
             }
 
-            document.onmousedown = function ( e ) {
+            document.onmousedown = canvas.ontouchstart = function ( e ) {
+               e.preventDefault();
                if ( match.running ) match.snake.rotate *= -1;
                else match.setup();
             }
 
             if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
+         }
+
+         var frame = function ( ) {
+            draw ();
+            update ();
+            requestAnimationFrame ( frame );
          }
 
          var draw = function ( ) {
@@ -535,15 +540,18 @@
             context.font = bestScoreSize + "px Varela Round";
             context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
             context.fillText ( "best " + localStorage.bestScore, 0, scoreSize + 30 + 2*bestScoreSize );
-
-            requestAnimationFrame ( draw );
          }
 
          var update = function ( ) {
-            match.update ( 1 / fps );
+            var now = Date.now();
+
+            if ( window.lastUpdateTime == undefined ) match.update ( 0.01 );
+            else match.update ( (now - lastUpdateTime) / 1000 );
+
+            window.lastUpdateTime = now;
 
             if ( screenshakeBegin > 0 ) {
-					var t = Date.now() - screenshakeBegin;
+					var t = now - screenshakeBegin;
 					screenshake = screenshakeWidth * Math.exp(- t / 150 ) * ( Math.sin(t/30) + Math.cos(t/30) );
 				}
          }
