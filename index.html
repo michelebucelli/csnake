@@ -7,19 +7,30 @@
       <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
 
       <style>
-			body {
-				background-color: #202020;
-				height: 100%;
-				width: 100%;
-				background-attachment: fixed;
-			}
+         body {
+            background-color: #202020;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+         }
 
-			#canvas:-webkit-full-screen { background-color: rgba(255,255,255,0); }
+         @media screen and (orientation:landscape) {
+            #canvas {
+               position: absolute;
+               left: 0; right: 0; top: 0; bottom: 0;
+               margin-top: 0; margin-bottom: 0;
+               margin-left: auto; margin-right: auto;
+            }
+         }
 
-			#canvas {
-				margin: auto; position: absolute;
-				top: 0; bottom: 0; right: 0; left: 0;
-			}
+         @media screen and (orientation:portrait) {
+            #canvas {
+               position: absolute;
+               left: 0; right: 0; top: 0; bottom: 0;
+               margin-top: auto; margin-bottom: auto;
+               margin-left: 0; margin-right: 0;
+            }
+         }
 
          #ghubmark {
             position: absolute;
@@ -37,7 +48,7 @@
 			//////////////////////////
 
          //Radius factor: field radius = canvas.height * radiusFactor
-			var radiusFactor = 0.38;
+			var radiusFactor = 0.35;
 
          // Radius of snake points
          var snakePointRadius = 9;
@@ -485,7 +496,9 @@
             canvas = document.getElementById ( "canvas" );
             context = canvas.getContext ( "2d" );
 
-            radius = Math.max ( canvas.width, canvas.height ) * radiusFactor;
+            resize();
+            document.getElementById("body").onresize = resize;
+            radius = 640 * radiusFactor;
 
             //setInterval ( draw, 1000 / fps );
             requestAnimationFrame ( frame );
@@ -513,6 +526,15 @@
             if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
          }
 
+         var resize = function ( ) {
+            //body = document.getElementById("body");
+            //rect = body.getBoundingClientRect();
+            vport = window.visualViewport;
+            canvas.width = vport.width;
+            canvas.height = vport.height;
+            window.overallScaling = Math.min(canvas.width,canvas.height) / 640;
+         }
+
          var frame = function ( ) {
             draw ();
             update ();
@@ -527,19 +549,21 @@
 				context.fillRect ( 0, 0, canvas.width, canvas.height );
 
             context.translate ( canvas.width / 2, canvas.height / 2 );
+            context.scale ( overallScaling, overallScaling );
 
 				match.draw ( context );
-
-            context.restore ( );
 
             context.fillStyle = scoreColor;
 				context.font = scoreSize + "px Varela Round";
 				context.textAlign = "start";
-				context.fillText ( Math.round(match.scoreShow), 30, 10 + scoreSize );
+            context.textBaseline = "top";
+				context.fillText ( Math.round(match.scoreShow), -radius, -radius - 60 );
 
             context.font = bestScoreSize + "px Varela Round";
-            context.fillText ( "combo x" + match.combo, 10, scoreSize + 20 + bestScoreSize );
-            context.fillText ( "best " + localStorage.bestScore, 0, scoreSize + 30 + 2*bestScoreSize );
+            context.fillText ( "combo x" + match.combo, -radius - 50, -radius + 20 );
+            context.fillText ( "best " + localStorage.bestScore, -radius - 80, -radius + 50 );
+
+            context.restore ();
          }
 
          var update = function ( ) {
@@ -558,7 +582,7 @@
       </script>
    </head>
 
-   <body onload="setup()">
+   <body id="body" onload="setup()">
    		<canvas width="640" height="640" id="canvas"></canvas>
          <a href="https://github.com/michelebucelli/csnake" target="_blank"><img src="./github.png" id="ghubmark"></img></a>
    </body>
