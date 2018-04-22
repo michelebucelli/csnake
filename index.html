@@ -77,10 +77,10 @@
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
 
          // Length gained for each fruit
-         var fruitLength = 20;
+         var fruitLength = 30;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 50;
+         var snakeInitialLength = 100;
 
          // Scaling parameters
          var initialScaling = 1.75;
@@ -147,7 +147,7 @@
                var r = snakePointRadius;
 
                var totdx = 0;
-               var maxdx = 3;
+               var maxdx = 1;
 
                for ( ; totdx + maxdx < dx; totdx += maxdx ) {
                   this.positions.unshift ( this.positions[0].slice(0) );
