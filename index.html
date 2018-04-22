@@ -14,24 +14,6 @@
             height: 100vh;
          }
 
-         @media screen and (orientation:landscape) {
-            #canvas {
-               position: absolute;
-               left: 0; right: 0; top: 0; bottom: 0;
-               margin-top: 0; margin-bottom: 0;
-               margin-left: auto; margin-right: auto;
-            }
-         }
-
-         @media screen and (orientation:portrait) {
-            #canvas {
-               position: absolute;
-               left: 0; right: 0; top: 0; bottom: 0;
-               margin-top: auto; margin-bottom: auto;
-               margin-left: 0; margin-right: 0;
-            }
-         }
-
          #ghubmark {
             position: absolute;
             bottom: 10px; right: 10px;
@@ -162,13 +144,23 @@
             // Function that moves the snake for the requested time step
             this.move = function ( t ) {
                var dx = this.speed * t;
-               var r = snakePointRadius; //0.5 * snakePointRadius * ( 1 + Math.exp ( -0.0005 * (this.positions.length-snakeInitialLengt ) );
+               var r = snakePointRadius;
+
+               var totdx = 0;
+               var maxdx = 3;
+
+               for ( ; totdx + maxdx < dx; totdx += maxdx ) {
+                  this.positions.unshift ( this.positions[0].slice(0) );
+                  this.positions[0][0] += maxdx * Math.cos ( this.direction );
+                  this.positions[0][1] += maxdx * Math.sin ( this.direction );
+                  this.positions[0][2] = r;
+                  this.positions.splice(-1,1);
+               }
 
                this.positions.unshift ( this.positions[0].slice(0) );
-               this.positions[0][0] += dx * Math.cos ( this.direction );
-               this.positions[0][1] += dx * Math.sin ( this.direction );
+               this.positions[0][0] += (dx - totdx) * Math.cos ( this.direction );
+               this.positions[0][1] += (dx - totdx) * Math.sin ( this.direction );
                this.positions[0][2] = r;
-
                this.positions.splice(-1,1);
 
                this.direction += snakeRotateSpeed * this.rotate * t;
@@ -500,9 +492,7 @@
             document.getElementById("body").onresize = resize;
             radius = 640 * radiusFactor;
 
-            //setInterval ( draw, 1000 / fps );
             requestAnimationFrame ( frame );
-            //setInterval ( update, 1000 / fps );
 
             bgColor = $("body").css("background-color");
             obstColor = bgColor;
@@ -517,18 +507,18 @@
                }
             }
 
-            document.onmousedown = canvas.ontouchstart = function ( e ) {
+            document.onmousedown = function ( e ) {
                e.preventDefault();
                if ( match.running ) match.snake.rotate *= -1;
                else match.setup();
             }
 
+            canvas.addEventListener("touchstart", document.onmousedown );
+
             if ( localStorage.bestScore == undefined ) localStorage.bestScore = 0;
          }
 
          var resize = function ( ) {
-            //body = document.getElementById("body");
-            //rect = body.getBoundingClientRect();
             vport = window.visualViewport;
             canvas.width = vport.width;
             canvas.height = vport.height;
