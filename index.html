@@ -66,14 +66,14 @@
          var fruitRadius = snakePointRadius;
 
          // Snake base speed, in pixels per second
-         var snakeBaseSpeed = 80;
+         var snakeBaseSpeed = 50;
 
          // Maximum speed factor
-         var maxSpeedFactor = 3;
+         var maxSpeedFactor = 5;
          var logMSF = Math.log ( maxSpeedFactor - 1 );
 
          // Speed increase parameter
-         var speedIncreaseParam = 0.005;
+         var speedIncreaseParam = 0.0075;
 
           // Snake curve radius, in pixels
          var snakeRotateRadius = 35;
@@ -82,15 +82,16 @@
          var snakeRotateSpeed = snakeBaseSpeed / snakeRotateRadius;
 
          // Length gained for each fruit
-         var fruitLength = 30;
+         var fruitLength = 15;
 
          // Snake initial length, in snake points
-         var snakeInitialLength = 100;
+         var snakeInitialLength = 80;
 
          // Scaling parameters
          var initialScaling = 1.75;
          var minScaling = 0.5;
-         var scalingK = 0.05;
+         var scalingK = 0.03;
+         var logscaling = Math.log ( initialScaling/minScaling - 1 );
 
          // Combo duration, seconds
          var comboDuration = 4;
@@ -373,7 +374,7 @@
                }
                else {
                   targetCombometer = 1 - (this.t - this.comboTime) / comboDuration;
-                  this.combometerShow += ( targetCombometer - this.combometerShow ) * 20 * t;
+                  this.combometerShow += ( targetCombometer - this.combometerShow ) * 10 * t;
                }
 
                // Animate scaling
@@ -417,7 +418,7 @@
                if ( delay > 0 ) return;
 
                for ( var i = 0; i < this.obstacles.length; ++i ) {
-                  var rr = fruitRadius + ( this.obstacles[i][2] + 5 );
+                  var rr = fruitRadius + ( this.obstacles[i][3] + 5 );
                   if ( dist2 ( this.fruits[j], this.obstacles[i] ) < rr*rr ) {
                      this.spawnFruit(j,delay);
                      break;
@@ -461,6 +462,10 @@
                   // And also check that it doesn't cover the tail
                   for ( var i = 0; i < this.snake.positions.length && !again; ++i )
                      again = ( dist2 ( this.snake.positions[i], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
+
+                  // Finally, check that it is not too close to other obstacles
+                  for ( var i = 0; i < this.obstacles.length && !again; ++i )
+                     again = ( dist2 ( this.obstacles[i], obst ) < (r + this.obstacles[i][3])*(r + this.obstacles[i][3]) )*0.01;
                } while ( again );
 
                this.obstacles.push ( obst );
