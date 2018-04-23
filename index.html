@@ -532,6 +532,9 @@
             canvas.width = vport.width;
             canvas.height = vport.height;
             window.overallScaling = Math.min(canvas.width,canvas.height) / 640;
+
+            if ( canvas.width < canvas.height ) window.mobile = true;
+            else window.mobile = false;
          }
 
          var frame = function ( ) {
@@ -548,25 +551,36 @@
 				context.fillRect ( 0, 0, canvas.width, canvas.height );
 
             context.translate ( canvas.width / 2, canvas.height / 2 );
-            context.scale ( overallScaling, overallScaling );
+            context.scale ( overallScaling * (mobile ? 0.45/radiusFactor : 1), overallScaling * (mobile ? 0.45/radiusFactor : 1) );
 
 				match.draw ( context );
 
-            context.fillStyle = scoreColor;
-				context.font = scoreSize + "px Varela Round";
-				context.textAlign = "start";
-            context.textBaseline = "top";
-				context.fillText ( Math.round(match.scoreShow), -radius, -radius - 60 );
+            if ( !mobile ) {
+               context.fillStyle = scoreColor;
+   				context.font = scoreSize + "px Varela Round";
+   				context.textAlign = "end";
+               context.textBaseline = "top";
+   				context.fillText ( Math.round(match.scoreShow), -radius + 100, -radius - 60 );
 
-            context.font = bestScoreSize + "px Varela Round";
-            context.fillText ( "combo x" + match.combo, -radius - 50, -radius + 20 );
-            context.fillText ( "best " + localStorage.bestScore, -radius - 80, -radius + 50 );
+               context.font = bestScoreSize + "px Varela Round";
+               context.fillText ( "combo x" + match.combo, -radius + 65, -radius + 20 );
+               context.fillText ( "best " + localStorage.bestScore, -radius + 40, -radius + 50 );
+            }
 
             context.restore ();
 
-            context.fillStyle = scoreColor;
-            context.font = "10px Varela Round";
-            context.fillText ( "fps: " + Math.round(window.fps), 10, canvas.height - 10 );
+            if ( mobile ) {
+               context.fillStyle = scoreColor;
+   				context.font = scoreSize*2 + "px Varela Round";
+   				context.textAlign = "start";
+               context.textBaseline = "hanging";
+   				context.fillText ( Math.round(match.scoreShow), 10, 10 );
+
+               context.font = bestScoreSize*2 + "px Varela Round";
+               context.textAlign = "end";
+               context.fillText ( "combo x" + match.combo, canvas.width - 10, 10 );
+               context.fillText ( "best " + localStorage.bestScore, canvas.width - 10, 20 + bestScoreSize*2 );
+            }
          }
 
          var update = function ( ) {
