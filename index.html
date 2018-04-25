@@ -533,13 +533,14 @@
          }
 
          var resize = function ( ) {
-            vport = window.visualViewport;
-            canvas.width = vport.width;
-            canvas.height = vport.height;
+            //vport = window.visualViewport;
+            canvas.width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0 );
+            canvas.height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             window.overallScaling = Math.min(canvas.width,canvas.height) / 640;
 
             if ( canvas.width < canvas.height ) window.mobile = true;
             else window.mobile = false;
+
          }
 
          var frame = function ( ) {
