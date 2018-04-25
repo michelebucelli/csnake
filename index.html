@@ -584,6 +584,26 @@
                context.fillText ( "best " + localStorage.bestScore, -radius + 40, -radius + 50 );
             }
 
+            if ( !match.running ) {
+               context.fillStyle = bgColor;
+               context.fillRect ( -canvas.width/2, -scoreSize*0.55, canvas.width, scoreSize*1.1 );
+               context.font = scoreSize + "px Varela Round";
+               context.textAlign = "center";
+               context.textBaseline = "middle";
+               context.fillStyle = scoreColor;
+               context.fillText ( "GAME OVER", 0, 0 );
+            }
+
+            if ( match.paused ) {
+               context.fillStyle = bgColor;
+               context.fillRect ( -canvas.width/2, -scoreSize*0.55, canvas.width, scoreSize*1.1 );
+               context.font = scoreSize + "px Varela Round";
+               context.textAlign = "center";
+               context.textBaseline = "middle";
+               context.fillStyle = scoreColor;
+               context.fillText ( "PAUSED", 0, 0 );
+            }
+
             context.restore ();
 
             if ( mobile ) {
