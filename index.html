@@ -241,6 +241,9 @@
             // Last time of obstacle spawn
             this.lastObst = 0;
 
+            // Death time
+            this.deathTime = 0;
+
             // Function that sets up the game
             this.setup = function ( ) {
                this.snake = new Snake ( );
@@ -359,6 +362,7 @@
                r = radius / this.scaling - this.snake.positions[0][2] + 1;
                if ( dist2 ( this.snake.positions[0], [0,0] ) > r*r ) {
                   this.running = false;
+                  this.deathTime = Date.now();
                   console.log ( "BORDER" );
                }
 
@@ -370,6 +374,7 @@
                   if ( dist2 ( this.snake.positions[0], this.snake.positions[i] ) < r*r &&
                        dist2 ( oldPositions[0], oldPositions[i] ) >= r*r ) {
                      this.running = false;
+                     this.deathTime = Date.now();
                      console.log ( "SELF " + i );
                   }
 
@@ -378,6 +383,7 @@
                   r = snakePointRadius + this.obstacles[i][2];
                   if ( dist2 ( this.snake.positions[0], this.obstacles[i] ) < r*r ) {
                      this.running = false;
+                     this.deathTime = Date.now();
                      console.log ( "OBSTACLE" );
                   }
                }
@@ -526,7 +532,7 @@
                if ( e.which == 32 ) {
                   if ( match.running && !match.paused ) match.snake.rotate *= -1;
                   else if ( match.paused ) match.paused = false;
-                  else match.setup();
+                  else if ( Date.now() - match.deathTime > 500 ) match.setup();
                }
                if ( e.which == 80 ) { match.paused = !match.paused; }
             }
@@ -535,7 +541,7 @@
                e.preventDefault();
                if ( match.running && !match.paused ) match.snake.rotate *= -1;
                else if ( match.paused ) match.paused = false;
-               else match.setup();
+               else if ( Date.now() - match.deathTime > 500 ) match.setup();
             }
 
             ifvisible.on("blur", function() { match.paused = true; } );
@@ -592,7 +598,7 @@
                context.textAlign = "center";
                context.textBaseline = "middle";
                context.fillStyle = scoreColor;
-               context.fillText ( "GAME OVER", 0, 0 );
+               context.fillText ( "GAME OVER", 0, 3 );
             }
 
             if ( match.paused ) {
@@ -602,7 +608,7 @@
                context.textAlign = "center";
                context.textBaseline = "middle";
                context.fillStyle = scoreColor;
-               context.fillText ( "PAUSED", 0, 0 );
+               context.fillText ( "PAUSED", 0, 3 );
             }
 
             context.restore ();
