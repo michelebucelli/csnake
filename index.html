@@ -156,28 +156,26 @@
                var totdx = 0;
                var maxdx = 1;
 
-               var tott = 0;
-               var dt = t * dx / maxdx;
                var count = 0;
+
+               var C = Math.cos(this.direction);
+               var S = Math.sin(this.direction);
 
                for ( ; totdx + maxdx < dx; totdx += maxdx ) {
                   this.positions.unshift ( this.positions[0].slice(0) );
-                  this.positions[0][0] += maxdx * Math.cos(this.direction);
-                  this.positions[0][1] += maxdx * Math.sin(this.direction);
+                  this.positions[0][0] += maxdx * C;
+                  this.positions[0][1] += maxdx * S;
                   this.positions[0][2] = r;
                   count += 1;
-
-                  this.direction += snakeRotateSpeed * this.rotate * dt;
-                  tott += dt;
                }
 
                this.positions.unshift ( this.positions[0].slice(0) );
-               this.positions[0][0] += (dx - totdx) * Math.cos(this.direction);
-               this.positions[0][1] += (dx - totdx) * Math.sin(this.direction);
+               this.positions[0][0] += (dx - totdx) * C;
+               this.positions[0][1] += (dx - totdx) * S;
                this.positions[0][2] = r;
                this.positions.splice(-count-1,count+1);
 
-               this.direction += snakeRotateSpeed * this.rotate * (t - tott);
+               this.direction += snakeRotateSpeed * this.rotate * t;
                this.dist += dx;
             }
 
@@ -250,12 +248,6 @@
                this.snake.positions.push ( [0,snakeRotateRadius,snakePointRadius] );
                this.snake.grow ( snakeInitialLength );
                this.fruits = [];
-
-               var d = 10;
-               for ( var i = 0; i < 10; ++i ) {
-                  this.spawnFruit ( i+1, d );
-                  d *= 2;
-               }
 
                this.score = 0;
                this.scoreShow = 0;
@@ -348,7 +340,10 @@
                      this.scoreNoCombo++;
 
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
+
                      this.spawnFruit(i);
+                     if ( Math.random() * Math.exp(3 * this.fruits.length) < this.scoreNoCombo ) this.spawnFruit(this.fruits.length);
+
                      this.snake.eat();
 
                      this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.scoreNoCombo * scalingK );
@@ -453,10 +448,11 @@
             this.spawnObst = function () {
                var r, rho, th, obst;
                var again;
+               var k = 0;
 
                do {
                   rho = Math.random() * radius / this.scaling;
-                  r = ( Math.random() * 50 + 30 ) / this.scaling;;
+                  r = ( Math.random() * 20 + 30 ) / this.scaling;;
                   th = Math.random() * 2*Math.PI;
                   obst = [ rho * Math.cos(th), rho * Math.sin(th), 0, r, this.t ];
 
@@ -471,8 +467,13 @@
                      again = ( dist2 ( this.snake.positions[i], obst ) < (r + snakePointRadius)*(r + snakePointRadius) );
 
                   // Finally, check that it is not too close to other obstacles
-                  for ( var i = 0; i < this.obstacles.length && !again; ++i )
-                     again = ( dist2 ( this.obstacles[i], obst ) < (r + this.obstacles[i][3])*(r + this.obstacles[i][3]) )*0.01;
+                  for ( var i = 0; i < this.obstacles.length && !again; ++i ) {
+                     var rr = r + this.obstacles[i][3] +  2*snakePointRadius;
+                     again = ( dist2 ( this.obstacles[i], obst ) < rr*rr );
+                  }
+
+                  // At last, the first time it does not touch the border, repeat
+                  if ( !again && k == 0 && (rho + 0.5*r) < radius / this.scaling ) { k = 1; again = true; }
                } while ( again );
 
                this.obstacles.push ( obst );
