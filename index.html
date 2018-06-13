@@ -13,7 +13,7 @@
 
 	  gtag('config', 'UA-38383090-7');
 	   </script>
-	   
+
       <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
 
       <style>
@@ -275,6 +275,8 @@
                this.spawnFruit ( 0 );
 
                this.lastObst = 0;
+
+               ga ( 'send', 'event', 'game', 'start' );
             }
 
             // Function that draws the game
@@ -413,7 +415,10 @@
                   this.combometerShow += ( targetCombometer - this.combometerShow ) * 10 * t;
                }
 
-               if ( !this.running ) shake();
+               if ( !this.running ) {
+                  ga ( 'send', 'event', 'game', 'end', this.score );
+                  shake();
+               }
             }
 
             // Spawns a fruit in the game
