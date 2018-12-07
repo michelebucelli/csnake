@@ -8,3 +8,5 @@ inside a rectangular field, you are in a circular one.
 direction. If you lose, press R to restart the game
 
 **Where to play**: well, [here](https://michelebucelli.github.io/csnake)
+
+**Credits**: concept and code by [Michele "Buch" Bucelli](https://github.com/michelebucelli); uses [ifvisible](https://github.com/serkanyersen/ifvisible.js/) by [Serkan Yersen](https://github.com/serkanyersen)
