@@ -203,13 +203,16 @@
 
             // Function that draws the snake on a graphic context
             this.draw = function ( context ) {
-               context.fillStyle = this.color;
+               context.strokeStyle = this.color;
+               context.lineWidth = 2*this.positions[0][2];
+               context.lineCap = "round";
 
-               for ( var i = 0; i < this.positions.length; i++ ) {
-                  context.beginPath ();
-                  context.arc ( this.positions[i][0], this.positions[i][1], this.positions[i][2], 0, 2*Math.PI );
-                  context.fill ();
+               context.beginPath ();
+               context.moveTo ( this.positions[0][0], this.positions[0][1] );
+               for ( var i = 1; i < this.positions.length; i++ ) {
+                  context.lineTo ( this.positions[i][0], this.positions[i][1], this.positions[i][2], 0, 2*Math.PI );
                }
+               context.stroke ();
 
                context.fillStyle = fieldColor;
                context.beginPath ();
