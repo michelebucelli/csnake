@@ -45,23 +45,26 @@
 			// Graphics parameters  //
 			//////////////////////////
 
-         //Radius factor: field radius = canvas.height * radiusFactor
+         // Radius factor: field radius = canvas.height * radiusFactor
 			var radiusFactor = 0.35;
 
          // Radius of snake points
          var snakePointRadius = 9;
 
-         //Field color: the background color of the circular game field
+         // Field color: the background color of the circular game field
 			var fieldColor = "#303030";
 
          // Obstacle color
          var obstColor = "";
 
+         // "Danger zone color"
+         var dangerColor = "#404040";
+
          // Fruit color
          var fruitColor = "#FCFFA3";
 
-         //Width of the screen shake effect
-			var screenshakeWidth = 10;
+         // Width of the screen shake effect on death
+			var deathShake = 10;
 
          // Score text color
          var scoreColor = "#FCFFA3";
@@ -75,6 +78,9 @@
 			//////////////////////////
 
          var fruitRadius = snakePointRadius;
+
+         // Target fruit density, in fruits per square pixel.
+         var fruitDensity = 1.75e-5;
 
          // Snake base speed, in pixels per second
          var snakeBaseSpeed = 50;
@@ -106,6 +112,9 @@
 
          // Combo duration, seconds
          var comboDuration = 4;
+
+         // Danger zone factor.
+         var dangerZoneFactor = 3.0;
       </script>
 
       <script>
@@ -210,7 +219,7 @@
                context.beginPath ();
                context.moveTo ( this.positions[0][0], this.positions[0][1] );
                for ( var i = 1; i < this.positions.length; i++ ) {
-                  context.lineTo ( this.positions[i][0], this.positions[i][1], this.positions[i][2], 0, 2*Math.PI );
+                  context.lineTo ( this.positions[i][0], this.positions[i][1] );
                }
                context.stroke ();
 
@@ -289,8 +298,22 @@
    				context.arc ( 0, 0, radius, 0, 2 * Math.PI );
    				context.fill();
 
+               
                context.save ();
+
+               context.beginPath();
+               context.arc ( 0, 0, Math.ceil(radius), 0, 2 * Math.PI );
+               context.clip();
+
                context.scale ( this.scaling, this.scaling );
+
+               context.fillStyle = dangerColor;
+               for ( var i = 0; i < this.obstacles.length; ++i ) {
+                  context.beginPath();
+                  context.arc ( this.obstacles[i][0], this.obstacles[i][1], this.obstacles[i][2] + dangerZoneFactor * snakePointRadius, 0, 2*Math.PI );
+                  context.fill();
+               }
+
                this.snake.draw ( context );
 
                context.fillStyle = obstColor;
@@ -354,22 +377,39 @@
                var r = fruitRadius + snakePointRadius;
                for ( var i = 0; i < this.fruits.length; ++i ) {
                   if ( this.fruits[i][3] <= 0 && dist2 ( this.snake.positions[0], this.fruits[i] ) < r*r ) {
-                     this.score += 1 + this.combo;
+                     var gainedScore = (1 + this.combo);
+
+                     for ( var j = 0; j < this.obstacles.length; ++j ) {
+                        var r0 = this.obstacles[j][2] + dangerZoneFactor * snakePointRadius + fruitRadius;
+
+                        if ( dist2 ( this.obstacles[j], this.fruits[i] ) < r0 * r0 ) {
+                           gainedScore *= 2;
+                           break;
+                        }
+                     }
+
+                     this.score += gainedScore;
                      this.scoreNoCombo++;
+
+                     console.log("Earned points: " + gainedScore);
 
                      localStorage.bestScore = Math.max ( localStorage.bestScore, this.score );
 
                      this.spawnFruit(i);
-                     if ( Math.random() * Math.exp(3 * this.fruits.length) < this.scoreNoCombo ) this.spawnFruit(this.fruits.length);
+                     // if ( Math.random() * Math.exp(3 * this.fruits.length) < this.scoreNoCombo ) this.spawnFruit(this.fruits.length);
 
                      this.snake.eat();
 
                      this.targetScaling = minScaling + ( initialScaling - minScaling ) * Math.exp ( -this.scoreNoCombo * scalingK );
 
+                     var area = Math.PI * (radius / this.scaling) * (radius / this.scaling);
+                     var density = this.fruits.length / area;
+                     console.log("Density = " + density);
+                     if ( density < fruitDensity )
+                        this.spawnFruit(this.fruits.length);
+
                      this.combo += 1;
                      this.comboTime = this.t;
-
-                     console.log ( "FRUIT" );
                   }
                }
 
@@ -420,7 +460,7 @@
 
                if ( !this.running ) {
                   ga ( 'send', 'event', 'game', 'end', this.score );
-                  shake();
+                  shake(deathShake);
                }
             }
 
@@ -508,7 +548,11 @@
 
          var screenshake = 0;
 			var screenshakeBegin = -1;
-         var shake = function () { screenshakeBegin = Date.now(); }
+         var shakeW = 0;
+         var shake = function ( w ) { 
+            screenshakeBegin = Date.now();
+            shakeW = w;
+         }
 
          var keys = new Array();
 			var registerKey = function ( n, k ) { keys.push ( { name: n, key: k, state: undefined } ); };
@@ -659,7 +703,7 @@
 
             if ( screenshakeBegin > 0 ) {
 					var t = now - screenshakeBegin;
-					screenshake = screenshakeWidth * Math.exp(- t / 150 ) * ( Math.sin(t/30) + Math.cos(t/30) );
+					screenshake = shakeW * Math.exp(- t / 150 ) * ( Math.sin(t/30) + Math.cos(t/30) );
 				}
          }
       </script>
